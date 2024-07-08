@@ -1,0 +1,9 @@
+DEBUG:root:Starting main function with audio file: macron__extract.mp3
+DEBUG:root:Starting transcription of macron__extract.mp3
+DEBUG:root:Loading Whisper model
+DEBUG:root:Whisper model loaded successfully
+DEBUG:root:Beginning transcription
+DEBUG:root:Transcription completed in 565.21 seconds
+DEBUG:root:Saving transcript to transcript.txt
+DEBUG:root:Transcript saved successfully
+DEBUG:root:Main function completed successfully
