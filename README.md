@@ -1,37 +1,40 @@
 # ChatGDIY
 
-ChatGDIY is an application that allows users to interact with content from the French podcast "Generation Do It Yourself". Users can ask questions to Matthieu (the host) or his guests, and get sourced answers.
+ChatGDIY is an application aimed at allowing users to interact with content from the French podcast "Generation Do It Yourself". The goal is to enable users to ask questions to the host (Matthieu) or guests and receive sourced answers.
 
-## Features
+## Current State
 
-- Transcription of podcast episodes using Whisper
-- Question-answering system based on podcast content
-- Source attribution for answers
+The project is in its initial stages, focusing on transcribing podcast episodes using AI technology.
 
-## Technologies Used
+### Implemented Features
 
-- Python
-- OpenAI Whisper for transcription
-- [Add other technologies as you implement them]
+- Basic transcription functionality using OpenAI's Whisper model
+- Script to process audio files and generate text transcripts
+- Logging system for debugging and progress tracking
 
-## Setup
+### Challenges and Limitations
 
-[Include setup instructions once you have them]
+1. **Processing Time**: Transcription of a 1-minute audio file takes 5-10 minutes, making it impractical for full episodes (1.5 hours each) and the entire podcast archive (400+ episodes).
 
-## Usage
+2. **Output Quality**:
+   - The current output is plain text without speaker identification or timestamps.
+   - Some transcription errors are present in the generated text.
 
-[Include usage instructions once the application is functional]
+3. **Scalability**: The current approach is not scalable for processing the entire podcast archive in a reasonable timeframe.
 
-## Future Development
+### Next Steps
 
-- Implement RAG model for improved question answering
-- Develop frontend interface
-- [Add other planned features]
+1. Implement speaker diarization and timestamp extraction.
+2. Explore methods to improve transcription accuracy.
+3. Develop strategies for efficient processing of the full podcast archive:
+   - Consider cloud-based or distributed processing solutions.
+   - Investigate parallel processing techniques.
+   - Explore incremental processing of new episodes.
+4. Plan data storage, indexing, and retrieval systems for the chatbot functionality.
+5. Research and implement post-processing techniques to clean up transcripts.
 
-## Contributing
+## Technical Stack
 
-[Include contribution guidelines if you want to accept contributions]
-
-## License
-
-[Include license information if applicable]
+- Python 3.12
+- OpenAI Whisper for speech-to-text conversion
+- FFmpeg for audio processing
