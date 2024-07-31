@@ -1,3 +1,33 @@
+"""
+Local Audio Transcription Script (Whisper Model)
+
+This script transcribes an MP3 audio file using the Whisper model from OpenAI, running locally on your machine.
+
+Features:
+- Transcribes audio using the Whisper model locally (no API calls)
+- Saves the transcribed text to a file
+- Includes logging for debugging purposes
+
+Usage:
+python transcribe.py
+
+Before running:
+1. Install required libraries:
+   pip install whisper
+
+2. Modify the audio_file variable in the main() function to point to your MP3 file.
+
+The script will process the audio file locally and save the transcription as 'transcript.txt' in the same directory.
+It also generates a 'transcribe_debug.log' file for debugging purposes.
+
+Note: 
+- This script uses the 'base' Whisper model running locally. You can change this in the script if needed.
+- The Whisper model will be downloaded the first time you run the script, but subsequent runs will use the local copy.
+- No internet connection is required after the initial model download.
+
+For more detailed instructions or troubleshooting, refer to the README.md file in the project repository.
+"""
+
 import whisper
 import os
 import logging

@@ -1,0 +1,62 @@
+DEBUG:root:Starting main function with audio file: macron__extract.mp3
+DEBUG:root:Starting transcription of macron__extract.mp3
+DEBUG:openai._base_client:Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='macron__extract.mp3'>)))], 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json'}}
+DEBUG:openai._base_client:Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+DEBUG:httpcore.connection:connect_tcp.started host='api.openai.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG:httpcore.connection:connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x107130530>
+DEBUG:httpcore.connection:start_tls.started ssl_context=<ssl.SSLContext object at 0x1070b6b50> server_hostname='api.openai.com' timeout=5.0
+DEBUG:httpcore.connection:start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x1070f57c0>
+DEBUG:httpcore.http11:send_request_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_headers.complete
+DEBUG:httpcore.http11:send_request_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_body.complete
+DEBUG:httpcore.http11:receive_response_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:receive_response_headers.complete return_value=(b'HTTP/1.1', 200, b'OK', [(b'Date', b'Tue, 09 Jul 2024 08:06:17 GMT'), (b'Content-Type', b'application/json'), (b'Transfer-Encoding', b'chunked'), (b'Connection', b'keep-alive'), (b'openai-organization', b'user-l2pdg4hdn5ljjev2v2y8awej'), (b'openai-processing-ms', b'4648'), (b'openai-version', b'2020-10-01'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains'), (b'x-ratelimit-limit-requests', b'50'), (b'x-ratelimit-remaining-requests', b'49'), (b'x-ratelimit-reset-requests', b'1.2s'), (b'x-request-id', b'req_0b50a68f7a28ae4f858cfee037dff003'), (b'CF-Cache-Status', b'DYNAMIC'), (b'Set-Cookie', b'__cf_bm=kW2Q_gQKrFVvrZfQEvNiozZ4MAp91e39qFVGf_qD0wU-1720512377-1.0.1.1-WplomAYsqrEyQ7pFxjahvP801O13dqZxIdXqndtQMcnRSkajnFXTjYSpMuflE9W_POUT8wRgn4K7pLi8CzSBuA; path=/; expires=Tue, 09-Jul-24 08:36:17 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), (b'Set-Cookie', b'_cfuvid=kmMN4HeptieW9Eg5gNKvhkgHON_hnwJqSODDZy2noKQ-1720512377360-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), (b'Server', b'cloudflare'), (b'CF-RAY', b'8a06d031fa1dbb72-CDG'), (b'Content-Encoding', b'gzip'), (b'alt-svc', b'h3=":443"; ma=86400')])
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 200 OK"
+DEBUG:httpcore.http11:receive_response_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:receive_response_body.complete
+DEBUG:httpcore.http11:response_closed.started
+DEBUG:httpcore.http11:response_closed.complete
+DEBUG:openai._base_client:HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "200 OK" Headers([('date', 'Tue, 09 Jul 2024 08:06:17 GMT'), ('content-type', 'application/json'), ('transfer-encoding', 'chunked'), ('connection', 'keep-alive'), ('openai-organization', 'user-l2pdg4hdn5ljjev2v2y8awej'), ('openai-processing-ms', '4648'), ('openai-version', '2020-10-01'), ('strict-transport-security', 'max-age=31536000; includeSubDomains'), ('x-ratelimit-limit-requests', '50'), ('x-ratelimit-remaining-requests', '49'), ('x-ratelimit-reset-requests', '1.2s'), ('x-request-id', 'req_0b50a68f7a28ae4f858cfee037dff003'), ('cf-cache-status', 'DYNAMIC'), ('set-cookie', '__cf_bm=kW2Q_gQKrFVvrZfQEvNiozZ4MAp91e39qFVGf_qD0wU-1720512377-1.0.1.1-WplomAYsqrEyQ7pFxjahvP801O13dqZxIdXqndtQMcnRSkajnFXTjYSpMuflE9W_POUT8wRgn4K7pLi8CzSBuA; path=/; expires=Tue, 09-Jul-24 08:36:17 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), ('set-cookie', '_cfuvid=kmMN4HeptieW9Eg5gNKvhkgHON_hnwJqSODDZy2noKQ-1720512377360-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), ('server', 'cloudflare'), ('cf-ray', '8a06d031fa1dbb72-CDG'), ('content-encoding', 'gzip'), ('alt-svc', 'h3=":443"; ma=86400')])
+DEBUG:openai._base_client:request_id: req_0b50a68f7a28ae4f858cfee037dff003
+DEBUG:root:Transcription completed successfully
+DEBUG:root:Saving transcript to transcript_macron__extract.txt
+DEBUG:root:Transcript saved successfully
+DEBUG:root:Main function completed successfully
+DEBUG:httpcore.connection:close.started
+DEBUG:httpcore.connection:close.complete
+DEBUG:root:Starting main function with audio file: macron_episode.mp3
+DEBUG:root:Starting transcription of macron_episode.mp3
+DEBUG:openai._base_client:Request options: {'method': 'post', 'url': '/audio/transcriptions', 'headers': {'Content-Type': 'multipart/form-data'}, 'files': [('file', SerializationIterator(index=0, iterator=SerializationIterator(index=0, iterator=<_io.BufferedReader name='macron_episode.mp3'>)))], 'json_data': {'model': 'whisper-1', 'response_format': 'verbose_json'}}
+DEBUG:openai._base_client:Sending HTTP Request: POST https://api.openai.com/v1/audio/transcriptions
+DEBUG:httpcore.connection:connect_tcp.started host='api.openai.com' port=443 local_address=None timeout=5.0 socket_options=None
+DEBUG:httpcore.connection:connect_tcp.complete return_value=<httpcore._backends.sync.SyncStream object at 0x106d78560>
+DEBUG:httpcore.connection:start_tls.started ssl_context=<ssl.SSLContext object at 0x106cfeb50> server_hostname='api.openai.com' timeout=5.0
+DEBUG:httpcore.connection:start_tls.complete return_value=<httpcore._backends.sync.SyncStream object at 0x106907b90>
+DEBUG:httpcore.http11:send_request_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_headers.complete
+DEBUG:httpcore.http11:send_request_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:send_request_body.complete
+DEBUG:httpcore.http11:receive_response_headers.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:receive_response_headers.complete return_value=(b'HTTP/1.1', 413, b'Payload Too Large', [(b'Date', b'Tue, 09 Jul 2024 08:09:43 GMT'), (b'Content-Type', b'application/json'), (b'Content-Length', b'171'), (b'Connection', b'keep-alive'), (b'openai-processing-ms', b'634'), (b'openai-version', b'2020-10-01'), (b'strict-transport-security', b'max-age=31536000; includeSubDomains'), (b'x-ratelimit-limit-requests', b'50'), (b'x-ratelimit-remaining-requests', b'49'), (b'x-ratelimit-reset-requests', b'1.2s'), (b'x-request-id', b'req_9cedcd47f2f82b04cbdf799f868aafee'), (b'CF-Cache-Status', b'DYNAMIC'), (b'Set-Cookie', b'__cf_bm=76EJfTKGVsicnjHOPKZBdBeM8LFHxhw_t2k54XchLeA-1720512583-1.0.1.1-tH5QZXudz9IOTtQ_Ee2grxtaOn0l1uQnRg9gR7MTx1FARtqo6SMZk7zCWR0e3tUGY4wk7zP5H5mMjPfl0ShVMw; path=/; expires=Tue, 09-Jul-24 08:39:43 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), (b'Set-Cookie', b'_cfuvid=ISSgwVZhDTBVQfNjnEih8XrK73Yt1gLdZ0.ybYV1uHQ-1720512583649-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), (b'Server', b'cloudflare'), (b'CF-RAY', b'8a06d4f4485ad51a-CDG'), (b'alt-svc', b'h3=":443"; ma=86400')])
+INFO:httpx:HTTP Request: POST https://api.openai.com/v1/audio/transcriptions "HTTP/1.1 413 Payload Too Large"
+DEBUG:httpcore.http11:receive_response_body.started request=<Request [b'POST']>
+DEBUG:httpcore.http11:receive_response_body.complete
+DEBUG:httpcore.http11:response_closed.started
+DEBUG:httpcore.http11:response_closed.complete
+DEBUG:openai._base_client:HTTP Response: POST https://api.openai.com/v1/audio/transcriptions "413 Payload Too Large" Headers([('date', 'Tue, 09 Jul 2024 08:09:43 GMT'), ('content-type', 'application/json'), ('content-length', '171'), ('connection', 'keep-alive'), ('openai-processing-ms', '634'), ('openai-version', '2020-10-01'), ('strict-transport-security', 'max-age=31536000; includeSubDomains'), ('x-ratelimit-limit-requests', '50'), ('x-ratelimit-remaining-requests', '49'), ('x-ratelimit-reset-requests', '1.2s'), ('x-request-id', 'req_9cedcd47f2f82b04cbdf799f868aafee'), ('cf-cache-status', 'DYNAMIC'), ('set-cookie', '__cf_bm=76EJfTKGVsicnjHOPKZBdBeM8LFHxhw_t2k54XchLeA-1720512583-1.0.1.1-tH5QZXudz9IOTtQ_Ee2grxtaOn0l1uQnRg9gR7MTx1FARtqo6SMZk7zCWR0e3tUGY4wk7zP5H5mMjPfl0ShVMw; path=/; expires=Tue, 09-Jul-24 08:39:43 GMT; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), ('set-cookie', '_cfuvid=ISSgwVZhDTBVQfNjnEih8XrK73Yt1gLdZ0.ybYV1uHQ-1720512583649-0.0.1.1-604800000; path=/; domain=.api.openai.com; HttpOnly; Secure; SameSite=None'), ('server', 'cloudflare'), ('cf-ray', '8a06d4f4485ad51a-CDG'), ('alt-svc', 'h3=":443"; ma=86400')])
+DEBUG:openai._base_client:request_id: req_9cedcd47f2f82b04cbdf799f868aafee
+DEBUG:openai._base_client:Encountered httpx.HTTPStatusError
+Traceback (most recent call last):
+  File "/Users/achille/Documents/Projets/chatgdiy/venv/lib/python3.12/site-packages/openai/_base_client.py", line 1020, in _request
+    response.raise_for_status()
+  File "/Users/achille/Documents/Projets/chatgdiy/venv/lib/python3.12/site-packages/httpx/_models.py", line 761, in raise_for_status
+    raise HTTPStatusError(message, request=request, response=self)
+httpx.HTTPStatusError: Client error '413 Payload Too Large' for url 'https://api.openai.com/v1/audio/transcriptions'
+For more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/413
+DEBUG:openai._base_client:Not retrying
+DEBUG:openai._base_client:Re-raising status error
+ERROR:root:Error during transcription: Error code: 413 - {'error': {'message': 'Maximum content size limit (26214400) exceeded (26274238 bytes read)', 'type': 'server_error', 'param': None, 'code': None}}
+ERROR:root:Error in main function: Error code: 413 - {'error': {'message': 'Maximum content size limit (26214400) exceeded (26274238 bytes read)', 'type': 'server_error', 'param': None, 'code': None}}
+DEBUG:httpcore.connection:close.started
+DEBUG:httpcore.connection:close.complete

@@ -1,3 +1,40 @@
+"""
+Enhanced Audio Transcription Script (Version 2)
+
+This script transcribes an MP3 audio file using OpenAI's Whisper API and processes the transcription into a readable format with improved features.
+
+Features:
+- Splits long audio files into manageable chunks for better processing
+- Transcribes audio using OpenAI's Whisper API (unlike Version 1, which used local processing)
+- Processes the transcription to include accurate timestamps
+- Implements a more sophisticated sentence segmentation algorithm
+- Saves the transcribed text to a file with improved formatting
+
+Improvements over Version 1:
+- Uses OpenAI's API for potentially more accurate transcription
+- Handles longer audio files by splitting them into chunks
+- Provides more accurate timestamps for each transcribed segment
+- Implements smarter sentence segmentation for improved readability
+
+Usage:
+python transcribe2.py
+
+Before running:
+1. Ensure you have a .env file with your OpenAI API key:
+   OPENAI_API_KEY=your_openai_api_key
+
+2. Install required libraries:
+   pip install python-dotenv openai pydub
+
+3. Modify the file_path variable in the main() function to point to your MP3 file.
+
+The script will process the audio file and save the transcription as a text file in the same directory.
+
+Note: This script requires an active internet connection to access the OpenAI API.
+
+For more detailed instructions or troubleshooting, refer to the README.md file in the project repository.
+"""
+
 import os
 from dotenv import load_dotenv
 import openai
@@ -89,7 +126,7 @@ def process_episode(file_path):
     print(f"Full transcription completed. Saved to {output_file}")
 
 def main():
-    file_path = "/Users/achille/Documents/Projets/chatgdiy/episodes/macron_episode.mp3"
+    file_path = "/Users/achille/Documents/Projets/chatgdiy/episodes/Yann.mp3"
     process_episode(file_path)
 
 if __name__ == "__main__":
