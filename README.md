@@ -97,6 +97,7 @@ The project has evolved from `transcribe4` to `transcribe5` to address several c
    SPOTIFY_CLIENT_ID=your_spotify_client_id
    SPOTIFY_CLIENT_SECRET=your_spotify_client_secret
    SPOTIFY_SHOW_ID=your_spotify_show_id
+   ASSEMBLYAI_API_KEY=your_assembly_api_key
    ```
 4. Run the desired script, e.g.:
    ```

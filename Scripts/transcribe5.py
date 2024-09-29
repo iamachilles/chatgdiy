@@ -58,7 +58,7 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Initialize AssemblyAI
-aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY", "80c94a33424344b99a5228ba3b36bac7")
+aai.settings.api_key = os.getenv("ASSEMBLYAI_API_KEY")
 
 def transcribe_and_diarize(file_path, language_code="fr"):
     logger.info(f"Transcribing and diarizing: {file_path}")
