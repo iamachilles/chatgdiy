@@ -38,18 +38,10 @@ import assemblyai as aai
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
-from werkzeug.exceptions import RequestEntityTooLarge
+import mimetypes
 
 app = Flask(__name__)
 CORS(app)
-
-@app.route('/')
-def serve_index():
-    return send_from_directory('.', 'index.html')
-
-@app.route('/<path:path>')
-def serve_static(path):
-    return send_from_directory('.', path)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -59,69 +51,83 @@ logger = logging.getLogger(__name__)
 load_dotenv()
 
 # Configure upload settings
-app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # Limit file size to 16MB
-ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a'}
+ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a', 'flac', 'mp4', 'mpeg', 'mpga', 'oga', 'webm'}
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def transcribe_openai(file_path, api_key):
     client = openai.OpenAI(api_key=api_key)
-    with open(file_path, "rb") as audio_file:
-        transcription = client.audio.transcriptions.create(
-            model="whisper-1", 
-            file=audio_file,
-            response_format="text"
-        )
-    return transcription
+    try:
+        with open(file_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio_file,
+                response_format="text"
+            )
+        return transcription
+    except Exception as e:
+        logger.error(f"OpenAI transcription error: {str(e)}")
+        raise Exception(f"OpenAI transcription failed: {str(e)}")
 
 def transcribe_assemblyai(file_path, api_key):
     aai.settings.api_key = api_key
-    transcriber = aai.Transcriber()
-    transcript = transcriber.transcribe(file_path)
-    return transcript.text
+    try:
+        transcriber = aai.Transcriber()
+        transcript = transcriber.transcribe(file_path)
+        return transcript.text
+    except Exception as e:
+        logger.error(f"AssemblyAI transcription error: {str(e)}")
+        raise Exception(f"AssemblyAI transcription failed: {str(e)}")
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
-    try:
-        if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
-        file = request.files['file']
-        service = request.form.get('service')
-        api_key = request.form.get('api_key')
+    if 'file' not in request.files:
+        return jsonify({"error": "No file part"}), 400
+    file = request.files['file']
+    service = request.form.get('service')
+    api_key = request.form.get('api_key')
 
-        if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
+    if file.filename == '':
+        return jsonify({"error": "No selected file"}), 400
 
-        if file and allowed_file(file.filename):
-            with tempfile.NamedTemporaryFile(delete=False) as temp_file:
+    if file and allowed_file(file.filename):
+        try:
+            # Create a temporary file with the correct extension
+            _, file_extension = os.path.splitext(file.filename)
+            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
                 file.save(temp_file.name)
                 temp_filename = temp_file.name
 
-            try:
-                if service == 'openai':
-                    transcription = transcribe_openai(temp_filename, api_key)
-                elif service == 'assemblyai':
-                    transcription = transcribe_assemblyai(temp_filename, api_key)
-                else:
-                    return jsonify({"error": "Invalid service selected"}), 400
+            # Log file details for debugging
+            file_size = os.path.getsize(temp_filename)
+            mime_type, _ = mimetypes.guess_type(temp_filename)
+            logger.info(f"File saved: {temp_filename}, Size: {file_size} bytes, MIME: {mime_type}")
 
-                return jsonify({"transcription": transcription})
-            except Exception as e:
-                app.logger.error(f"Transcription error: {str(e)}")
-                return jsonify({"error": f"Transcription error: {str(e)}"}), 500
-            finally:
-                if os.path.exists(temp_filename):
-                    os.remove(temp_filename)
-        else:
-            return jsonify({"error": "File type not allowed"}), 400
-    except Exception as e:
-        app.logger.error(f"Unexpected error: {str(e)}")
-        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
+            if service == 'openai':
+                transcription = transcribe_openai(temp_filename, api_key)
+            elif service == 'assemblyai':
+                transcription = transcribe_assemblyai(temp_filename, api_key)
+            else:
+                return jsonify({"error": "Invalid service selected"}), 400
 
-@app.errorhandler(RequestEntityTooLarge)
-def handle_file_too_large(e):
-    return jsonify({"error": "File is too large. Maximum size is 16MB"}), 413
+            return jsonify({"transcription": transcription})
+        except Exception as e:
+            logger.error(f"Transcription error: {str(e)}")
+            return jsonify({"error": f"Transcription error: {str(e)}"}), 500
+        finally:
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
+    else:
+        return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    app.run(debug=False)  # Set debug to False for production
+    app.run(debug=True)
