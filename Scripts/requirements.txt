@@ -1,0 +1,8 @@
+flask
+flask-cors
+openai
+assemblyai
+pydub
+python-dotenv
+werkzeug
+gunicorn
