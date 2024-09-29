@@ -83,37 +83,41 @@ def transcribe_assemblyai(file_path, api_key):
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    service = request.form.get('service')
-    api_key = request.form.get('api_key')
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        file = request.files['file']
+        service = request.form.get('service')
+        api_key = request.form.get('api_key')
 
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
 
-    if file and allowed_file(file.filename):
-        try:
+        if file and allowed_file(file.filename):
             with tempfile.NamedTemporaryFile(delete=False) as temp_file:
                 file.save(temp_file.name)
                 temp_filename = temp_file.name
 
-            if service == 'openai':
-                transcription = transcribe_openai(temp_filename, api_key)
-            elif service == 'assemblyai':
-                transcription = transcribe_assemblyai(temp_filename, api_key)
-            else:
-                return jsonify({"error": "Invalid service selected"}), 400
+            try:
+                if service == 'openai':
+                    transcription = transcribe_openai(temp_filename, api_key)
+                elif service == 'assemblyai':
+                    transcription = transcribe_assemblyai(temp_filename, api_key)
+                else:
+                    return jsonify({"error": "Invalid service selected"}), 400
 
-            return jsonify({"transcription": transcription})
-        except Exception as e:
-            logger.error(f"Transcription error: {str(e)}")
-            return jsonify({"error": "An error occurred during transcription"}), 500
-        finally:
-            if os.path.exists(temp_filename):
-                os.remove(temp_filename)
-    else:
-        return jsonify({"error": "File type not allowed"}), 400
+                return jsonify({"transcription": transcription})
+            except Exception as e:
+                app.logger.error(f"Transcription error: {str(e)}")
+                return jsonify({"error": f"Transcription error: {str(e)}"}), 500
+            finally:
+                if os.path.exists(temp_filename):
+                    os.remove(temp_filename)
+        else:
+            return jsonify({"error": "File type not allowed"}), 400
+    except Exception as e:
+        app.logger.error(f"Unexpected error: {str(e)}")
+        return jsonify({"error": f"An unexpected error occurred: {str(e)}"}), 500
 
 @app.errorhandler(RequestEntityTooLarge)
 def handle_file_too_large(e):
