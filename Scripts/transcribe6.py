@@ -35,13 +35,21 @@ import tempfile
 from dotenv import load_dotenv
 import openai
 import assemblyai as aai
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
 from werkzeug.utils import secure_filename
 from werkzeug.exceptions import RequestEntityTooLarge
 
 app = Flask(__name__)
 CORS(app)
+
+@app.route('/')
+def serve_index():
+    return send_from_directory('.', 'index.html')
+
+@app.route('/<path:path>')
+def serve_static(path):
+    return send_from_directory('.', path)
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
