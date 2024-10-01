@@ -70,12 +70,23 @@ def transcribe_openai(file_path, api_key):
         logger.error(f"OpenAI transcription error: {str(e)}")
         raise Exception(f"OpenAI transcription failed: {str(e)}")
 
-def transcribe_assemblyai(file_path, api_key):
+def transcribe_assemblyai(file_path, api_key, language='fr'):
     aai.settings.api_key = api_key
     try:
         transcriber = aai.Transcriber()
-        transcript = transcriber.transcribe(file_path)
-        return transcript.text
+        config = aai.TranscriptionConfig(
+            language_code=language,
+            speaker_labels=True,  # Enable speaker diarization
+            language_detection=True if language == 'auto' else False
+        )
+        transcript = transcriber.transcribe(file_path, config=config)
+        
+        # Format the transcript with speaker labels
+        formatted_transcript = []
+        for utterance in transcript.utterances:
+            formatted_transcript.append(f"Speaker {utterance.speaker}: {utterance.text}")
+        
+        return "\n".join(formatted_transcript)
     except Exception as e:
         logger.error(f"AssemblyAI transcription error: {str(e)}")
         raise Exception(f"AssemblyAI transcription failed: {str(e)}")
@@ -95,6 +106,7 @@ def transcribe():
     file = request.files['file']
     service = request.form.get('service')
     api_key = request.form.get('api_key')
+    language = request.form.get('language', 'fr')  # Default to French if not specified
 
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
@@ -115,7 +127,7 @@ def transcribe():
             if service == 'openai':
                 transcription = transcribe_openai(temp_filename, api_key)
             elif service == 'assemblyai':
-                transcription = transcribe_assemblyai(temp_filename, api_key)
+                transcription = transcribe_assemblyai(temp_filename, api_key, language)
             else:
                 return jsonify({"error": "Invalid service selected"}), 400
 

@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #dropZone { border: 2px dashed #ccc; padding: 20px; text-align: center; margin-bottom: 20px; }
+        #dropZone.highlight { background-color: #f0f0f0; }
+        #transcriptionResult { width: 100%; height: 200px; margin-top: 20px; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+        #error { color: red; margin-top: 10px; }
+        #loading { display: none; }
+    </style>
+</head>
+<body>
+    <h1>Audio Transcription</h1>
+    
+    <div class="warning">
+        <strong>Warning:</strong> This service is provided for convenience and demonstration purposes. Please be aware of the following risks:
+        <ul>
+            <li>Your API key is sent to our server for transcription. While we do not store it, it is transmitted over the internet.</li>
+            <li>The audio file you upload is temporarily processed on our server. We do not retain any data, but be cautious about uploading sensitive information.</li>
+            <li>The transcription services (OpenAI and AssemblyAI) will process your audio. Review their privacy policies if you have concerns.</li>
+            <li>This is a public service. Do not upload confidential or private audio content.</li>
+        </ul>
+        By using this service, you acknowledge these risks and agree to use it responsibly.
+    </div>
+
+    <div id="dropZone">Drop your audio file here or click to select</div>
+    <input type="file" id="fileInput" accept=".mp3,.wav,.ogg,.m4a" style="display: none;">
+    <select id="serviceSelect">
+        <option value="openai">OpenAI</option>
+        <option value="assemblyai">AssemblyAI</option>
+    </select>
+    <input type="password" id="apiKey" placeholder="Enter API Key">
+    <button id="transcribeButton">Transcribe</button>
+    <div id="loading">Transcribing... Please wait.</div>
+    <div id="error"></div>
+    <textarea id="transcriptionResult" readonly></textarea>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const serviceSelect = document.getElementById('serviceSelect');
+        const apiKeyInput = document.getElementById('apiKey');
+        const transcribeButton = document.getElementById('transcribeButton');
+        const transcriptionResult = document.getElementById('transcriptionResult');
+        const loadingDiv = document.getElementById('loading');
+        const errorDiv = document.getElementById('error');
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('highlight');
+        });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('highlight'));
+        dropZone.addEventListener('drop', handleDrop);
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                dropZone.textContent = `File selected: ${e.target.files[0].name}`;
+            }
+        });
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropZone.classList.remove('highlight');
+            if (e.dataTransfer.files.length > 0) {
+                fileInput.files = e.dataTransfer.files;
+                dropZone.textContent = `File selected: ${e.dataTransfer.files[0].name}`;
+            }
+        }
+
+        transcribeButton.addEventListener('click', async () => {
+            const file = fileInput.files[0];
+            const service = serviceSelect.value;
+            const apiKey = apiKeyInput.value;
+
+            if (!file || !apiKey) {
+                errorDiv.textContent = 'Please select a file and enter an API key.';
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('service', service);
+            formData.append('api_key', apiKey);
+
+            try {
+                errorDiv.textContent = '';
+                transcriptionResult.value = '';
+                loadingDiv.style.display = 'block';
+                transcribeButton.disabled = true;
+
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                transcriptionResult.value = result.transcription;
+            } catch (error) {
+                console.error('Error:', error);
+                errorDiv.textContent = `Error: ${error.message}`;
+                transcriptionResult.value = '';
+            } finally {
+                loadingDiv.style.display = 'none';
+                transcribeButton.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>

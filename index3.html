@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Transcription</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-image: radial-gradient(#e5e7eb 0.5px, transparent 0.5px), radial-gradient(#e5e7eb 0.5px, #f3f4f6 0.5px);
+            background-size: 20px 20px;
+            background-position: 0 0, 10px 10px;
+        }
+        .gradient-text {
+            background: linear-gradient(45deg, #3B82F6, #8B5CF6);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .loader {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #3498db;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center justify-center p-4">
+    <main class="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl">
+        <h1 class="text-4xl font-bold mb-6 text-center gradient-text">Audio Transcription</h1>
+        
+        <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
+            <p class="font-bold">Warning:</p>
+            <p>This service is provided for convenience and demonstration purposes. Please be aware of the following risks:</p>
+            <ul class="list-disc list-inside mt-2">
+                <li>Your API key is sent to our server for transcription. While we do not store it, it is transmitted over the internet.</li>
+                <li>The audio file you upload is temporarily processed on our server. We do not retain any data, but be cautious about uploading sensitive information.</li>
+                <li>The transcription services (OpenAI and AssemblyAI) will process your audio. Review their privacy policies if you have concerns.</li>
+                <li>This is a public service. Do not upload confidential or private audio content.</li>
+            </ul>
+            <p class="mt-2">By using this service, you acknowledge these risks and agree to use it responsibly.</p>
+        </div>
+
+        <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors duration-300 mb-4">
+            <p class="text-gray-500">Drop your audio file here or click to select</p>
+        </div>
+
+        <div class="mb-4">
+            <label for="openaiKey" class="block text-gray-700 text-sm font-bold mb-2">OpenAI API Key:</label>
+            <input type="password" id="openaiKey" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter OpenAI API Key">
+        </div>
+
+        <div class="mb-6">
+            <label for="assemblyaiKey" class="block text-gray-700 text-sm font-bold mb-2">AssemblyAI API Key:</label>
+            <input type="password" id="assemblyaiKey" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Enter AssemblyAI API Key">
+        </div>
+
+        <div class="flex justify-center space-x-4 mb-6">
+            <button id="openaiBtn" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-300">
+                OpenAI
+            </button>
+            <button id="assemblyaiBtn" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-300">
+                AssemblyAI
+            </button>
+        </div>
+
+        <button id="transcribeBtn" class="w-full bg-purple-500 hover:bg-purple-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline transition-colors duration-300">
+            Transcribe
+        </button>
+
+        <div id="loading" class="hidden mt-4 text-center">
+            <p class="text-gray-600">Transcribing... Please wait.</p>
+            <div class="loader"></div>
+        </div>
+
+        <div id="error" class="hidden mt-4 text-red-500"></div>
+        <div id="result" class="mt-4 text-gray-700"></div>
+    </main>
+
+    <script>
+        let selectedFile = null;
+        let selectedService = null;
+
+        const dropZone = document.getElementById('dropZone');
+        const openaiBtn = document.getElementById('openaiBtn');
+        const assemblyaiBtn = document.getElementById('assemblyaiBtn');
+        const transcribeBtn = document.getElementById('transcribeBtn');
+        const loading = document.getElementById('loading');
+        const error = document.getElementById('error');
+        const result = document.getElementById('result');
+
+        dropZone.addEventListener('click', () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'audio/*';
+            fileInput.onchange = (e) => {
+                selectedFile = e.target.files[0];
+                dropZone.textContent = `Selected file: ${selectedFile.name}`;
+            };
+            fileInput.click();
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-blue-500');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-blue-500');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-blue-500');
+            selectedFile = e.dataTransfer.files[0];
+            dropZone.textContent = `Selected file: ${selectedFile.name}`;
+        });
+
+        openaiBtn.addEventListener('click', () => {
+            selectedService = 'openai';
+            openaiBtn.classList.add('ring-2', 'ring-green-300');
+            assemblyaiBtn.classList.remove('ring-2', 'ring-blue-300');
+        });
+
+        assemblyaiBtn.addEventListener('click', () => {
+            selectedService = 'assemblyai';
+            assemblyaiBtn.classList.add('ring-2', 'ring-blue-300');
+            openaiBtn.classList.remove('ring-2', 'ring-green-300');
+        });
+
+        transcribeBtn.addEventListener('click', async () => {
+            if (!selectedFile) {
+                showError('Please select an audio file.');
+                return;
+            }
+            if (!selectedService) {
+                showError('Please select a transcription service.');
+                return;
+            }
+
+            const apiKey = selectedService === 'openai' 
+                ? document.getElementById('openaiKey').value 
+                : document.getElementById('assemblyaiKey').value;
+
+            if (!apiKey) {
+                showError(`Please enter your ${selectedService === 'openai' ? 'OpenAI' : 'AssemblyAI'} API key.`);
+                return;
+            }
+
+            showLoading();
+
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('service', selectedService);
+            formData.append('api_key', apiKey);
+
+            try {
+                const response = await fetch('/transcribe', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showResult(data.transcription);
+                } else {
+                    showError(data.error || 'An error occurred during transcription.');
+                }
+            } catch (err) {
+                showError('An error occurred while sending the request.');
+            } finally {
+                hideLoading();
+            }
+        });
+
+        function showLoading() {
+            loading.classList.remove('hidden');
+            error.classList.add('hidden');
+            result.textContent = '';
+        }
+
+        function hideLoading() {
+            loading.classList.add('hidden');
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        function showResult(transcription) {
+            result.textContent = transcription;
+        }
+    </script>
+</body>
+</html>
