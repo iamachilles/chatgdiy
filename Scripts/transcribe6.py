@@ -41,7 +41,7 @@ from werkzeug.utils import secure_filename
 import mimetypes
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -76,12 +76,11 @@ def transcribe_assemblyai(file_path, api_key, language='fr'):
         transcriber = aai.Transcriber()
         config = aai.TranscriptionConfig(
             language_code=language,
-            speaker_labels=True,  # Enable speaker diarization
+            speaker_labels=True,
             language_detection=True if language == 'auto' else False
         )
         transcript = transcriber.transcribe(file_path, config=config)
         
-        # Format the transcript with speaker labels
         formatted_transcript = []
         for utterance in transcript.utterances:
             formatted_transcript.append(f"Speaker {utterance.speaker}: {utterance.text}")
@@ -106,20 +105,18 @@ def transcribe():
     file = request.files['file']
     service = request.form.get('service')
     api_key = request.form.get('api_key')
-    language = request.form.get('language', 'fr')  # Default to French if not specified
+    language = request.form.get('language', 'fr')
 
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
     if file and allowed_file(file.filename):
         try:
-            # Create a temporary file with the correct extension
             _, file_extension = os.path.splitext(file.filename)
             with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
                 file.save(temp_file.name)
                 temp_filename = temp_file.name
 
-            # Log file details for debugging
             file_size = os.path.getsize(temp_filename)
             mime_type, _ = mimetypes.guess_type(temp_filename)
             logger.info(f"File saved: {temp_filename}, Size: {file_size} bytes, MIME: {mime_type}")
@@ -142,4 +139,5 @@ def transcribe():
         return jsonify({"error": "File type not allowed"}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
