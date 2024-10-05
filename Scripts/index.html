@@ -86,7 +86,16 @@
 
         <div id="error" class="hidden mt-4 text-red-500"></div>
 
-        <div id="result" class="mt-4 text-gray-700"></div>
+        <div id="resultContainer" class="mt-4 hidden">
+            <h2 class="text-xl font-semibold mb-2">Transcription Result:</h2>
+            <div class="flex items-center mb-2">
+                <button id="copyBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors duration-300 mr-2">
+                    Copy to Clipboard
+                </button>
+                <span id="copyMessage" class="text-green-500 hidden">Copied!</span>
+            </div>
+            <div id="result" class="text-gray-700 p-4 bg-gray-100 rounded-lg"></div>
+        </div>
     </main>
 
     <script>
@@ -103,14 +112,27 @@
         const loading = document.getElementById('loading');
         const error = document.getElementById('error');
         const result = document.getElementById('result');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyMessage = document.getElementById('copyMessage');
+        const resultContainer = document.getElementById('resultContainer');
 
-        dropZone.addEventListener('click', () => document.createElement('input').click());
+        dropZone.addEventListener('click', () => {
+            const fileInput = document.createElement('input');
+            fileInput.type = 'file';
+            fileInput.accept = 'audio/*';
+            fileInput.onchange = (e) => {
+                audioFile = e.target.files[0];
+                dropZone.textContent = `File selected: ${audioFile.name}`;
+            };
+            fileInput.click();
+        });
         dropZone.addEventListener('dragover', (e) => e.preventDefault());
         dropZone.addEventListener('drop', handleFileDrop);
 
         openaiBtn.addEventListener('click', () => selectService('openai'));
         assemblyaiBtn.addEventListener('click', () => selectService('assemblyai'));
         transcribeBtn.addEventListener('click', transcribe);
+        copyBtn.addEventListener('click', copyToClipboard);
 
         function handleFileDrop(e) {
             e.preventDefault();
@@ -169,8 +191,37 @@
         function showLoading() {
             loading.classList.remove('hidden');
             error.classList.add('hidden');
-            result.classList.add('hidden');
+            resultContainer.classList.add('hidden');
         }
+
+        function hideLoading() {
+            loading.classList.add('hidden');
+        }
+
+        function showError(message) {
+            error.textContent = message;
+            error.classList.remove('hidden');
+        }
+
+        function showResult(transcription) {
+            result.textContent = transcription;
+            resultContainer.classList.remove('hidden');
+        }
+
+        function copyToClipboard() {
+            const textToCopy = result.textContent;
+            navigator.clipboard.writeText(textToCopy).then(() => {
+                copyMessage.classList.remove('hidden');
+                setTimeout(() => {
+                    copyMessage.classList.add('hidden');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        }
+    </script>
+</body>
+</html>
 
         function hideLoading() {
             loading.classList.add('hidden');
