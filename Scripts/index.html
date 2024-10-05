@@ -31,7 +31,6 @@
     <main class="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl">
         <h1 id="audio-to-text" class="text-4xl font-bold mb-6 text-center gradient-text">Audio To Text</h1>
 
-        <!-- Warning section -->
         <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6" role="alert">
             <p class="font-bold">Warning:</p>
             <p>This service is provided for convenience and demonstration purposes. Please be aware of the following risks:</p>
@@ -43,9 +42,7 @@
             </ul>
             <p>By using this service, you acknowledge these risks and agree to use it responsibly.</p>
         </div>
-        </div>
 
-        <!-- Step 1: Upload Your Audio File -->
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-2">Step 1: Upload Your Audio File</h2>
             <p>Drop your audio file or click to select one. Supported formats include MP3, WAV, M4A, and more.</p>
@@ -54,7 +51,6 @@
             </div>
         </div>
 
-        <!-- Step 2: Choose a Transcription Service -->
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-2">Step 2: Choose a Transcription Service</h2>
             <p>Select the service you prefer. OpenAI is widely used, while AssemblyAI offers higher quality transcriptions.</p>
@@ -64,7 +60,6 @@
             </div>
         </div>
 
-        <!-- Step 3: Enter API Key -->
         <div id="apiKeySection" class="mb-6 hidden">
             <h2 class="text-xl font-semibold mb-2">Step 3: Enter API Key</h2>
             <p>Provide the API key for your selected service.</p>
@@ -78,7 +73,6 @@
             </div>
         </div>
 
-        <!-- Step 4: Transcribe -->
         <div class="mb-6">
             <h2 class="text-xl font-semibold mb-2">Step 4: Transcribe</h2>
             <p>Once you've completed the above steps, click the button below to start the transcription process.</p>
@@ -214,17 +208,54 @@
             resultContainer.classList.remove('hidden');
         }
 
-        function copyToClipboard() {
-            const textToCopy = result.textContent;
+    function copyToClipboard() {
+        const textToCopy = result.innerText || result.textContent;
+        if (!textToCopy) {
+            showError("No text to copy. Please transcribe an audio file first.");
+            return;
+        }
+
+        if (navigator.clipboard && window.isSecureContext) {
+            // For modern browsers
             navigator.clipboard.writeText(textToCopy).then(() => {
-                copyMessage.classList.remove('hidden');
-                setTimeout(() => {
-                    copyMessage.classList.add('hidden');
-                }, 2000);
+                showCopiedMessage();
             }).catch(err => {
                 console.error('Failed to copy text: ', err);
+                showError("Failed to copy text. Please try selecting and copying manually.");
             });
+        } else {
+            // Fallback for older browsers
+            const textArea = document.createElement("textarea");
+            textArea.value = textToCopy;
+            textArea.style.position = "fixed";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showCopiedMessage();
+                } else {
+                    showError("Failed to copy text. Please try selecting and copying manually.");
+                }
+            } catch (err) {
+                console.error('Failed to copy text: ', err);
+                showError("Failed to copy text. Please try selecting and copying manually.");
+            }
+
+            document.body.removeChild(textArea);
         }
-    </script>
+    }
+
+    function showCopiedMessage() {
+        copyMessage.textContent = "Copied!";
+        copyMessage.classList.remove('hidden');
+        setTimeout(() => {
+            copyMessage.classList.add('hidden');
+        }, 2000);
+    }
+    
+  </script>
 </body>
 </html>
