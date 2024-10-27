@@ -1,0 +1,2 @@
+DEBUG:root:Starting main function with audio file: macron__extract.mp3
+ERROR:root:Error: Audio file not found at macron__extract.mp3
