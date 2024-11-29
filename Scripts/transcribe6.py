@@ -120,23 +120,28 @@ def limit_memory():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def split_audio(file_path, chunk_duration_ms=300000):  # 5 minutes per chunk
+def split_audio(file_path, chunk_duration_ms=60000):  # 1 minute chunks
     """Split audio with memory-efficient processing"""
     chunks = []
     try:
         # Load audio in chunks
         audio = AudioSegment.from_file(file_path)
         total_duration = len(audio)
+        total_chunks = (total_duration + chunk_duration_ms - 1) // chunk_duration_ms
+        
+        logger.info(f"Starting to split audio file of {total_duration}ms into {total_chunks} chunks")
         
         for i in range(0, total_duration, chunk_duration_ms):
             if not check_memory():
-                logger.warning("Memory threshold reached during split")
+                logger.warning(f"Memory threshold reached during split at chunk {len(chunks)+1}/{total_chunks}")
                 gc.collect()
             
             chunk = audio[i:i + chunk_duration_ms]
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
                 chunk.export(temp_file.name, format="mp3")
                 chunks.append(temp_file.name)
+            
+            logger.info(f"Processed chunk {len(chunks)}/{total_chunks}")
             
             # Clean up chunk memory
             del chunk
@@ -155,13 +160,15 @@ def transcribe_openai(file_path, api_key):
     client = openai.OpenAI(api_key=api_key)
     chunks = split_audio(file_path)
     transcriptions = []
+    total_chunks = len(chunks)
 
     try:
-        for chunk in chunks:
+        for i, chunk in enumerate(chunks, 1):
             if not check_memory():
-                logger.warning("Memory threshold reached during OpenAI transcription")
+                logger.warning(f"Memory threshold reached during OpenAI transcription at chunk {i}/{total_chunks}")
                 gc.collect()
                 
+            logger.info(f"Transcribing chunk {i}/{total_chunks}")
             with open(chunk, "rb") as audio_file:
                 transcription = client.audio.transcriptions.create(
                     model="whisper-1", 
@@ -173,9 +180,10 @@ def transcribe_openai(file_path, api_key):
             # Clean up chunk immediately
             os.remove(chunk)
             gc.collect()
+            logger.info(f"Completed chunk {i}/{total_chunks}")
             
     except Exception as e:
-        logger.error(f"OpenAI transcription error: {str(e)}")
+        logger.error(f"OpenAI transcription error at chunk {i}/{total_chunks}: {str(e)}")
         raise
     finally:
         # Ensure all chunks are cleaned up
@@ -359,6 +367,22 @@ def summarize():
             return jsonify({"error": str(e)}), 500
         finally:
             gc.collect()
+            
+@app.route('/health')
+def health_check():
+    """Check if the service is running and its memory usage"""
+    process = psutil.Process()
+    memory_info = process.memory_info()
+    
+    status = {
+        'status': 'healthy',
+        'memory_usage_mb': memory_info.rss / 1024 / 1024,
+        'cpu_percent': process.cpu_percent(),
+        'working_directory': os.getcwd(),
+        'temp_files': len(os.listdir('/tmp')),
+    }
+    
+    return jsonify(status)
 
 if __name__ == '__main__':
     # Set memory limits before running
