@@ -54,6 +54,34 @@ from threading import Lock
 import resource
 import psutil
 
+def cleanup_temp_files():
+    """Clean up all temporary files in the /tmp directory"""
+    import glob
+    
+    patterns = [
+        '/tmp/tmp*.mp3',
+        '/tmp/tmp*.wav',
+        '/tmp/tmp*.ogg',
+        '/tmp/tmp*.m4a',
+        '/tmp/tmp*.flac',
+        '/tmp/tmp*.mp4',
+        '/tmp/tmp*.mpeg',
+        '/tmp/tmp*.mpga',
+        '/tmp/tmp*.oga',
+        '/tmp/tmp*.webm'
+    ]
+    
+    for pattern in patterns:
+        try:
+            for file_path in glob.glob(pattern):
+                try:
+                    os.remove(file_path)
+                    logger.info(f"Cleaned up: {file_path}")
+                except Exception as e:
+                    logger.error(f"Error removing {file_path}: {e}")
+        except Exception as e:
+            logger.error(f"Error processing pattern {pattern}: {e}")
+
 app = Flask(__name__)
 CORS(app)
 
@@ -249,6 +277,7 @@ def serve_static(path):
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
     with processing_lock:  # Ensure thread safety
+        cleanup_temp_files()  # Clean up any leftover temporary files
         if 'file' not in request.files:
             return jsonify({"error": "No file part"}), 400
         
