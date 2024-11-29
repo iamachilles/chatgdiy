@@ -278,6 +278,8 @@ def serve_static(path):
 def transcribe():
     with processing_lock:  # Ensure thread safety
         cleanup_temp_files()  # Clean up any leftover temporary files
+        logger.info("Starting new transcription request")
+        
         if 'file' not in request.files:
             return jsonify({"error": "No file part"}), 400
         
@@ -285,18 +287,15 @@ def transcribe():
         service = request.form.get('service')
         api_key = request.form.get('api_key')
         language = request.form.get('language', 'fr')
-
-        if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
-
-        if not allowed_file(file.filename):
-            return jsonify({"error": "File type not allowed"}), 400
+        
+        logger.info(f"Service selected: {service}, Language: {language}")
 
         try:
             # Check file size
             file.seek(0, os.SEEK_END)
             size = file.tell()
             file.seek(0)
+            logger.info(f"Initial file size: {size} bytes")
             
             if size > MAX_FILE_SIZE:
                 return jsonify({"error": "File too large"}), 400
@@ -310,24 +309,37 @@ def transcribe():
             file_size = os.path.getsize(temp_filename)
             mime_type, _ = mimetypes.guess_type(temp_filename)
             logger.info(f"File saved: {temp_filename}, Size: {file_size} bytes, MIME: {mime_type}")
+            
+            # Log memory usage before processing
+            process = psutil.Process()
+            logger.info(f"Memory usage before processing: {process.memory_info().rss / 1024 / 1024:.2f} MB")
 
             # Process based on service
             if service == 'openai':
+                logger.info("Starting OpenAI transcription")
                 transcription = transcribe_openai(temp_filename, api_key)
             elif service == 'assemblyai':
+                logger.info("Starting AssemblyAI transcription")
                 transcription = transcribe_assemblyai(temp_filename, api_key, language)
             else:
                 return jsonify({"error": "Invalid service selected"}), 400
+
+            logger.info("Transcription completed successfully")
+            logger.info(f"Transcription length: {len(transcription)} characters")
+            logger.info(f"Memory usage after processing: {process.memory_info().rss / 1024 / 1024:.2f} MB")
 
             return jsonify({"transcription": transcription})
 
         except Exception as e:
             logger.error(f"Transcription error: {str(e)}")
+            logger.exception("Full error traceback:")  # This will log the full stack trace
             return jsonify({"error": str(e)}), 500
         finally:
             if 'temp_filename' in locals() and os.path.exists(temp_filename):
                 os.remove(temp_filename)
+                logger.info(f"Cleaned up temp file: {temp_filename}")
             gc.collect()
+            logger.info(f"Final memory usage: {process.memory_info().rss / 1024 / 1024:.2f} MB")
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
