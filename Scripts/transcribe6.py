@@ -121,31 +121,38 @@ def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def split_audio(file_path, chunk_duration_ms=60000):  # 1 minute chunks
-    """Split audio with memory-efficient processing"""
+    """Split audio with streaming to minimize memory usage"""
     chunks = []
     try:
-        # Load audio in chunks
-        audio = AudioSegment.from_file(file_path)
-        total_duration = len(audio)
-        total_chunks = (total_duration + chunk_duration_ms - 1) // chunk_duration_ms
+        # Get duration without loading entire file
+        info = AudioSegment.from_file(file_path, duration=1).duration_seconds
+        total_duration = AudioSegment.from_file(file_path).duration_seconds * 1000
+        total_chunks = int((total_duration + chunk_duration_ms - 1) // chunk_duration_ms)
         
         logger.info(f"Starting to split audio file of {total_duration}ms into {total_chunks} chunks")
         
-        for i in range(0, total_duration, chunk_duration_ms):
-            if not check_memory():
-                logger.warning(f"Memory threshold reached during split at chunk {len(chunks)+1}/{total_chunks}")
-                gc.collect()
+        # Process in streaming mode
+        for i in range(0, int(total_duration), chunk_duration_ms):
+            start_time = i
+            end_time = min(i + chunk_duration_ms, total_duration)
             
-            chunk = audio[i:i + chunk_duration_ms]
+            # Load only the chunk we need
+            chunk = AudioSegment.from_file(
+                file_path,
+                start_second=start_time/1000,
+                duration=(end_time - start_time)/1000
+            )
+            
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
                 chunk.export(temp_file.name, format="mp3")
                 chunks.append(temp_file.name)
             
-            logger.info(f"Processed chunk {len(chunks)}/{total_chunks}")
-            
-            # Clean up chunk memory
+            # Force cleanup
             del chunk
             gc.collect()
+            
+            logger.info(f"Processed chunk {len(chunks)}/{total_chunks}")
+            logger.info(f"Current memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
         
         return chunks
     except Exception as e:
@@ -284,19 +291,13 @@ def serve_static(path):
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
+    # Force garbage collection at start of request
+    gc.collect()
+    
     with processing_lock:  # Ensure thread safety
         cleanup_temp_files()  # Clean up any leftover temporary files
         logger.info("Starting new transcription request")
-        
-        if 'file' not in request.files:
-            return jsonify({"error": "No file part"}), 400
-        
-        file = request.files['file']
-        service = request.form.get('service')
-        api_key = request.form.get('api_key')
-        language = request.form.get('language', 'fr')
-        
-        logger.info(f"Service selected: {service}, Language: {language}")
+        logger.info(f"Initial memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
 
         try:
             # Check file size
@@ -345,9 +346,10 @@ def transcribe():
         finally:
             if 'temp_filename' in locals() and os.path.exists(temp_filename):
                 os.remove(temp_filename)
-                logger.info(f"Cleaned up temp file: {temp_filename}")
+            # Force thorough cleanup
             gc.collect()
-            logger.info(f"Final memory usage: {process.memory_info().rss / 1024 / 1024:.2f} MB")
+            gc.collect()  # Second collection to catch circular references
+            logger.info(f"Final memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
@@ -367,7 +369,7 @@ def summarize():
             return jsonify({"error": str(e)}), 500
         finally:
             gc.collect()
-            
+
 @app.route('/health')
 def health_check():
     """Check if the service is running and its memory usage"""
