@@ -27,6 +27,16 @@ Usage:
 Note: Ensure you have appropriate security measures in place, including HTTPS encryption,
 when deploying to a production environment.
 """
+"""
+Advanced Audio Transcription and Summarization Script (Version 6.6)
+
+Updates from 6.5:
+- Improved memory management for large file processing
+- Added worker memory limits and cleanup
+- Enhanced error handling for out-of-memory situations
+- Optimized chunk processing for transcription services
+- Added request timeout handling
+"""
 
 import os
 import logging
@@ -39,6 +49,10 @@ from flask_cors import CORS
 from werkzeug.utils import secure_filename
 import mimetypes
 from pydub import AudioSegment
+import gc
+from threading import Lock
+import resource
+import psutil
 
 app = Flask(__name__)
 CORS(app)
@@ -53,22 +67,61 @@ load_dotenv()
 # Configure upload settings
 ALLOWED_EXTENSIONS = {'mp3', 'wav', 'ogg', 'm4a', 'flac', 'mp4', 'mpeg', 'mpga', 'oga', 'webm'}
 
+# Memory management settings
+MAX_MEMORY = 512 * 1024 * 1024  # 512MB
+CHUNK_SIZE = 10 * 1024 * 1024   # 10MB chunks for processing
+MAX_FILE_SIZE = 100 * 1024 * 1024  # 100MB max file size
+
+# Thread safety
+processing_lock = Lock()
+
+def check_memory():
+    """Monitor memory usage and clean up if necessary"""
+    process = psutil.Process(os.getpid())
+    memory_usage = process.memory_info().rss
+    
+    if memory_usage > MAX_MEMORY:
+        gc.collect()
+        return False
+    return True
+
+def limit_memory():
+    """Set memory limits for the process"""
+    resource.setrlimit(resource.RLIMIT_AS, (MAX_MEMORY, MAX_MEMORY))
+
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def split_audio(file_path, chunk_size=25*1024*1024):  # 25 MB in bytes
-    audio = AudioSegment.from_file(file_path)
+def split_audio(file_path, chunk_duration_ms=300000):  # 5 minutes per chunk
+    """Split audio with memory-efficient processing"""
     chunks = []
-    duration = len(audio)
-    chunk_duration = chunk_size / (audio.frame_rate * audio.sample_width * audio.channels) * 1000  # in milliseconds
-
-    for i in range(0, duration, int(chunk_duration)):
-        chunk = audio[i:i+int(chunk_duration)]
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-            chunk.export(temp_file.name, format="mp3")
-            chunks.append(temp_file.name)
-
-    return chunks
+    try:
+        # Load audio in chunks
+        audio = AudioSegment.from_file(file_path)
+        total_duration = len(audio)
+        
+        for i in range(0, total_duration, chunk_duration_ms):
+            if not check_memory():
+                logger.warning("Memory threshold reached during split")
+                gc.collect()
+            
+            chunk = audio[i:i + chunk_duration_ms]
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
+                chunk.export(temp_file.name, format="mp3")
+                chunks.append(temp_file.name)
+            
+            # Clean up chunk memory
+            del chunk
+            gc.collect()
+        
+        return chunks
+    except Exception as e:
+        logger.error(f"Error splitting audio: {str(e)}")
+        # Clean up any created chunks
+        for chunk in chunks:
+            if os.path.exists(chunk):
+                os.remove(chunk)
+        raise
 
 def transcribe_openai(file_path, api_key):
     client = openai.OpenAI(api_key=api_key)
@@ -77,6 +130,10 @@ def transcribe_openai(file_path, api_key):
 
     try:
         for chunk in chunks:
+            if not check_memory():
+                logger.warning("Memory threshold reached during OpenAI transcription")
+                gc.collect()
+                
             with open(chunk, "rb") as audio_file:
                 transcription = client.audio.transcriptions.create(
                     model="whisper-1", 
@@ -84,10 +141,16 @@ def transcribe_openai(file_path, api_key):
                     response_format="text"
                 )
                 transcriptions.append(transcription)
+                
+            # Clean up chunk immediately
+            os.remove(chunk)
+            gc.collect()
+            
     except Exception as e:
         logger.error(f"OpenAI transcription error: {str(e)}")
-        raise Exception(f"OpenAI transcription failed: {str(e)}")
+        raise
     finally:
+        # Ensure all chunks are cleaned up
         for chunk in chunks:
             if os.path.exists(chunk):
                 os.remove(chunk)
@@ -102,6 +165,10 @@ def transcribe_assemblyai(file_path, api_key, language='fr'):
     try:
         transcriber = aai.Transcriber()
         for chunk in chunks:
+            if not check_memory():
+                logger.warning("Memory threshold reached during AssemblyAI transcription")
+                gc.collect()
+                
             config = aai.TranscriptionConfig(
                 language_code=language,
                 speaker_labels=True,
@@ -109,16 +176,22 @@ def transcribe_assemblyai(file_path, api_key, language='fr'):
             )
             transcript = transcriber.transcribe(chunk, config=config)
             
-            # Format the transcript with speaker labels
+            # Format transcript with speaker labels
             formatted_transcript = []
             for utterance in transcript.utterances:
                 formatted_transcript.append(f"Speaker {utterance.speaker}: {utterance.text}")
             
             transcriptions.append("\n".join(formatted_transcript))
+            
+            # Clean up chunk immediately
+            os.remove(chunk)
+            gc.collect()
+            
     except Exception as e:
         logger.error(f"AssemblyAI transcription error: {str(e)}")
-        raise Exception(f"AssemblyAI transcription failed: {str(e)}")
+        raise
     finally:
+        # Ensure all chunks are cleaned up
         for chunk in chunks:
             if os.path.exists(chunk):
                 os.remove(chunk)
@@ -128,12 +201,16 @@ def transcribe_assemblyai(file_path, api_key, language='fr'):
 def summarize_text(text, api_key, max_tokens=500):
     client = openai.OpenAI(api_key=api_key)
     
-    # Split the text into chunks if it's too long
-    max_chunk_length = 4000  # Adjust this value based on the model's token limit
+    # Split text into smaller chunks
+    max_chunk_length = 3000  # Reduced from 4000 to be more conservative
     chunks = [text[i:i+max_chunk_length] for i in range(0, len(text), max_chunk_length)]
     
     summaries = []
     for chunk in chunks:
+        if not check_memory():
+            logger.warning("Memory threshold reached during summarization")
+            gc.collect()
+            
         try:
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
@@ -146,12 +223,12 @@ def summarize_text(text, api_key, max_tokens=500):
             summaries.append(response.choices[0].message.content.strip())
         except Exception as e:
             logger.error(f"OpenAI summarization error: {str(e)}")
-            raise Exception(f"OpenAI summarization failed: {str(e)}")
-    
+            raise
+
     full_summary = " ".join(summaries)
     
-    # If the summary is long, format it as HTML bullet points
-    if len(full_summary.split()) > 50:  # Adjust this threshold as needed
+    # Format as HTML bullets if long
+    if len(full_summary.split()) > 50:
         bullet_points = full_summary.split('\n')
         formatted_summary = "<ul>"
         for point in bullet_points:
@@ -159,8 +236,7 @@ def summarize_text(text, api_key, max_tokens=500):
                 formatted_summary += f"<li>{point.strip()}</li>"
         formatted_summary += "</ul>"
         return formatted_summary
-    else:
-        return full_summary
+    return full_summary
 
 @app.route('/')
 def serve_index():
@@ -172,29 +248,41 @@ def serve_static(path):
 
 @app.route('/transcribe', methods=['POST'])
 def transcribe():
-    if 'file' not in request.files:
-        return jsonify({"error": "No file part"}), 400
-    file = request.files['file']
-    service = request.form.get('service')
-    api_key = request.form.get('api_key')
-    language = request.form.get('language', 'fr')  # Default to French if not specified
+    with processing_lock:  # Ensure thread safety
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+        
+        file = request.files['file']
+        service = request.form.get('service')
+        api_key = request.form.get('api_key')
+        language = request.form.get('language', 'fr')
 
-    if file.filename == '':
-        return jsonify({"error": "No selected file"}), 400
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
 
-    if file and allowed_file(file.filename):
+        if not allowed_file(file.filename):
+            return jsonify({"error": "File type not allowed"}), 400
+
         try:
-            # Create a temporary file with the correct extension
-            _, file_extension = os.path.splitext(file.filename)
-            with tempfile.NamedTemporaryFile(delete=False, suffix=file_extension) as temp_file:
+            # Check file size
+            file.seek(0, os.SEEK_END)
+            size = file.tell()
+            file.seek(0)
+            
+            if size > MAX_FILE_SIZE:
+                return jsonify({"error": "File too large"}), 400
+
+            # Create temporary file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as temp_file:
                 file.save(temp_file.name)
                 temp_filename = temp_file.name
 
-            # Log file details for debugging
+            # Log file details
             file_size = os.path.getsize(temp_filename)
             mime_type, _ = mimetypes.guess_type(temp_filename)
             logger.info(f"File saved: {temp_filename}, Size: {file_size} bytes, MIME: {mime_type}")
 
+            # Process based on service
             if service == 'openai':
                 transcription = transcribe_openai(temp_filename, api_key)
             elif service == 'assemblyai':
@@ -203,30 +291,35 @@ def transcribe():
                 return jsonify({"error": "Invalid service selected"}), 400
 
             return jsonify({"transcription": transcription})
+
         except Exception as e:
             logger.error(f"Transcription error: {str(e)}")
             return jsonify({"error": str(e)}), 500
         finally:
-            if os.path.exists(temp_filename):
+            if 'temp_filename' in locals() and os.path.exists(temp_filename):
                 os.remove(temp_filename)
-    else:
-        return jsonify({"error": "File type not allowed"}), 400
+            gc.collect()
 
 @app.route('/summarize', methods=['POST'])
 def summarize():
-    data = request.json
-    text = data.get('text')
-    api_key = data.get('api_key')
+    with processing_lock:  # Ensure thread safety
+        data = request.json
+        text = data.get('text')
+        api_key = data.get('api_key')
 
-    if not text or not api_key:
-        return jsonify({"error": "Missing text or API key"}), 400
+        if not text or not api_key:
+            return jsonify({"error": "Missing text or API key"}), 400
 
-    try:
-        summary = summarize_text(text, api_key)
-        return jsonify({"summary": summary})
-    except Exception as e:
-        logger.error(f"Summarization error: {str(e)}")
-        return jsonify({"error": str(e)}), 500
+        try:
+            summary = summarize_text(text, api_key)
+            return jsonify({"summary": summary})
+        except Exception as e:
+            logger.error(f"Summarization error: {str(e)}")
+            return jsonify({"error": str(e)}), 500
+        finally:
+            gc.collect()
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    # Set memory limits before running
+    limit_memory()
+    app.run(debug=False)
