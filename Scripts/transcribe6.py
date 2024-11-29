@@ -124,35 +124,52 @@ def split_audio(file_path, chunk_duration_ms=60000):  # 1 minute chunks
     """Split audio with streaming to minimize memory usage"""
     chunks = []
     try:
-        # Get duration without loading entire file
-        info = AudioSegment.from_file(file_path, duration=1).duration_seconds
-        total_duration = AudioSegment.from_file(file_path).duration_seconds * 1000
-        total_chunks = int((total_duration + chunk_duration_ms - 1) // chunk_duration_ms)
+        # Get file info without loading the whole file
+        audio = AudioSegment.from_file(file_path, format='mp3')
+        total_duration = len(audio)
+        del audio  # Release memory immediately
+        gc.collect()
         
+        total_chunks = int((total_duration + chunk_duration_ms - 1) // chunk_duration_ms)
         logger.info(f"Starting to split audio file of {total_duration}ms into {total_chunks} chunks")
         
         # Process in streaming mode
         for i in range(0, int(total_duration), chunk_duration_ms):
+            logger.info(f"Starting chunk {len(chunks)+1}/{total_chunks}")
             start_time = i
             end_time = min(i + chunk_duration_ms, total_duration)
             
-            # Load only the chunk we need
-            chunk = AudioSegment.from_file(
-                file_path,
-                start_second=start_time/1000,
-                duration=(end_time - start_time)/1000
-            )
+            # Use raw processing to minimize memory usage
+            command = [
+                'ffmpeg',
+                '-i', file_path,
+                '-ss', str(start_time/1000),
+                '-t', str((end_time - start_time)/1000),
+                '-f', 'mp3',
+                '-acodec', 'libmp3lame',
+                '-y'  # Overwrite output files
+            ]
             
             with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as temp_file:
-                chunk.export(temp_file.name, format="mp3")
-                chunks.append(temp_file.name)
+                command.append(temp_file.name)
+                
+                import subprocess
+                process = subprocess.Popen(
+                    command,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE
+                )
+                stdout, stderr = process.communicate()
+                
+                if process.returncode == 0:
+                    chunks.append(temp_file.name)
+                    logger.info(f"Processed chunk {len(chunks)}/{total_chunks}")
+                    logger.info(f"Current memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
+                else:
+                    raise Exception(f"FFmpeg error: {stderr.decode()}")
             
             # Force cleanup
-            del chunk
             gc.collect()
-            
-            logger.info(f"Processed chunk {len(chunks)}/{total_chunks}")
-            logger.info(f"Current memory usage: {psutil.Process().memory_info().rss / 1024 / 1024:.2f} MB")
         
         return chunks
     except Exception as e:
