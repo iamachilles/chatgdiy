@@ -120,7 +120,7 @@ def limit_memory():
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-def split_audio(file_path, chunk_duration_ms=29000):  # 29 seconds per chunk
+def split_audio(file_path, chunk_duration_ms=60000):  # 1 minute chunks
     """Split audio with memory-efficient processing"""
     chunks = []
     try:
@@ -367,7 +367,7 @@ def summarize():
             return jsonify({"error": str(e)}), 500
         finally:
             gc.collect()
-
+            
 @app.route('/health')
 def health_check():
     """Check if the service is running and its memory usage"""
