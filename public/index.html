@@ -1,293 +1,423 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Audio Transcription and Summarization</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        .gradient-text {
-            background: linear-gradient(45deg, #4F46E5, #06B6D4);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+      .gradient-text {
+        background: linear-gradient(45deg, #4f46e5, #06b6d4);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+      .loader {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+      }
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
         }
-        .loader {
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
+        100% {
+          transform: rotate(360deg);
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+      }
     </style>
-</head>
-<body class="bg-gray-100 min-h-screen flex items-center justify-center">
+  </head>
+  <body class="bg-gray-100 min-h-screen flex items-center justify-center">
     <div class="bg-white rounded-lg shadow-md p-8 w-full max-w-2xl relative">
-        <!-- GitHub Icon -->
-        <a href="https://github.com/iamachilles/chatgdiy" 
-           target="_blank" 
-           rel="noopener noreferrer" 
-           class="absolute top-4 right-4 text-gray-600 hover:text-gray-900 transition-colors">
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
-        </a>
+      <!-- GitHub Icon -->
+      <a
+        href="https://github.com/iamachilles/chatgdiy"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="absolute top-4 right-4 text-gray-600 hover:text-gray-900 transition-colors"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          width="24"
+          height="24"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          <path
+            d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"
+          />
+          <path d="M9 18c-4.51 2-5-2-7-2" />
+        </svg>
+      </a>
 
-        <h1 class="text-4xl font-bold mb-6 text-center gradient-text">Audio To Text</h1>
-        
-        <div class="mb-4">
-            <button id="showPrecautions" class="text-blue-600 hover:underline">Precautions of use</button>
-            <div id="precautionsContent" class="hidden mt-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4">
-                <p class="font-bold">Warning:</p>
-                <ul class="list-disc pl-5">
-                    <li>Your API key is sent to our server for transcription. While we do not store it, it is transmitted over the internet.</li>
-                    <li>The audio file you upload is temporarily processed on our server. We do not retain any data, but be cautious about uploading sensitive information.</li>
-                    <li>The transcription services (OpenAI and AssemblyAI) will process your audio. Review their privacy policies if you have concerns.</li>
-                    <li>This is a public service. Do not upload confidential or private audio content.</li>
-                </ul>
-                <p class="mt-2">By using this service, you acknowledge these risks and agree to use it responsibly.</p>
-            </div>
-        </div>
+      <h1 class="text-4xl font-bold mb-6 text-center gradient-text">
+        Audio To Text
+      </h1>
 
-        <div class="mb-4">
-            <button id="showApiInfo" class="text-blue-600 hover:underline">About API Choice</button>
-            <div id="apiInfoContent" class="hidden mt-2 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4">
-                <p>Choose between two transcription services:</p>
-                <ul class="list-disc pl-5">
-                    <li><strong>OpenAI:</strong> Widely used, good for general transcription tasks.</li>
-                    <li><strong>AssemblyAI:</strong> Offers higher quality transcriptions and additional features like speaker diarization.</li>
-                </ul>
-                <p class="mt-2">Select the service that best fits your needs and enter the corresponding API key.</p>
-            </div>
+      <div class="mb-4">
+        <button id="showPrecautions" class="text-blue-600 hover:underline">
+          Precautions of use
+        </button>
+        <div
+          id="precautionsContent"
+          class="hidden mt-2 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4"
+        >
+          <p class="font-bold">Warning:</p>
+          <ul class="list-disc pl-5">
+            <li>
+              Your API key is sent to our server for transcription. While we do
+              not store it, it is transmitted over the internet.
+            </li>
+            <li>
+              The audio file you upload is temporarily processed on our server.
+              We do not retain any data, but be cautious about uploading
+              sensitive information.
+            </li>
+            <li>
+              The transcription services (OpenAI and AssemblyAI) will process
+              your audio. Review their privacy policies if you have concerns.
+            </li>
+            <li>
+              This is a public service. Do not upload confidential or private
+              audio content.
+            </li>
+          </ul>
+          <p class="mt-2">
+            By using this service, you acknowledge these risks and agree to use
+            it responsibly.
+          </p>
         </div>
+      </div>
 
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Step 1: Upload Your Audio File</h2>
-            <div id="dropZone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors duration-300">
-                Drop your audio file here or click to select
-            </div>
-            <input type="file" id="fileInput" class="hidden" accept=".mp3,.wav,.ogg,.m4a,.flac,.mp4,.mpeg,.mpga,.oga,.webm">
+      <div class="mb-4">
+        <button id="showApiInfo" class="text-blue-600 hover:underline">
+          About API Choice
+        </button>
+        <div
+          id="apiInfoContent"
+          class="hidden mt-2 bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4"
+        >
+          <p>Choose between two transcription services:</p>
+          <ul class="list-disc pl-5">
+            <li>
+              <strong>OpenAI:</strong> Widely used, good for general
+              transcription tasks.
+            </li>
+            <li>
+              <strong>AssemblyAI:</strong> Offers higher quality transcriptions
+              and additional features like speaker diarization.
+            </li>
+          </ul>
+          <p class="mt-2">
+            Select the service that best fits your needs and enter the
+            corresponding API key.
+          </p>
         </div>
+      </div>
 
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Step 2: Choose a Transcription Service</h2>
-            <div class="flex justify-center space-x-4">
-                <button id="openaiBtn" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">OpenAI</button>
-                <button id="assemblyaiBtn" class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors">AssemblyAI</button>
-            </div>
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">
+          Step 1: Upload Your Audio File
+        </h2>
+        <div
+          id="dropZone"
+          class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 transition-colors duration-300"
+        >
+          Drop your audio file here or click to select
         </div>
+        <input
+          type="file"
+          id="fileInput"
+          class="hidden"
+          accept=".mp3,.wav,.ogg,.m4a,.flac,.mp4,.mpeg,.mpga,.oga,.webm"
+        />
+      </div>
 
-        <div id="apiKeySection" class="mb-6 hidden">
-            <h2 class="text-xl font-semibold mb-2">Step 3: Enter API Key</h2>
-            <div id="openaiKeyInput" class="hidden">
-                <label for="openaiKey" class="block mb-2">OpenAI API Key:</label>
-                <input type="password" id="openaiKey" class="w-full p-2 border rounded" placeholder="Enter your OpenAI API key">
-            </div>
-            <div id="assemblyaiKeyInput" class="hidden">
-                <label for="assemblyaiKey" class="block mb-2">AssemblyAI API Key:</label>
-                <input type="password" id="assemblyaiKey" class="w-full p-2 border rounded" placeholder="Enter your AssemblyAI API key">
-            </div>
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">
+          Step 2: Choose a Transcription Service
+        </h2>
+        <div class="flex justify-center space-x-4">
+          <button
+            id="openaiBtn"
+            class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors"
+          >
+            OpenAI
+          </button>
+          <button
+            id="assemblyaiBtn"
+            class="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+          >
+            AssemblyAI
+          </button>
         </div>
+      </div>
 
-        <div class="mb-6">
-            <h2 class="text-xl font-semibold mb-2">Step 4: Transcribe</h2>
-            <button id="transcribeBtn" class="w-full py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors">Transcribe</button>
+      <div id="apiKeySection" class="mb-6 hidden">
+        <h2 class="text-xl font-semibold mb-2">Step 3: Enter API Key</h2>
+        <div id="openaiKeyInput" class="hidden">
+          <label for="openaiKey" class="block mb-2">OpenAI API Key:</label>
+          <input
+            type="password"
+            id="openaiKey"
+            class="w-full p-2 border rounded"
+            placeholder="Enter your OpenAI API key"
+          />
         </div>
+        <div id="assemblyaiKeyInput" class="hidden">
+          <label for="assemblyaiKey" class="block mb-2"
+            >AssemblyAI API Key:</label
+          >
+          <input
+            type="password"
+            id="assemblyaiKey"
+            class="w-full p-2 border rounded"
+            placeholder="Enter your AssemblyAI API key"
+          />
+        </div>
+      </div>
 
-        <div id="loading" class="hidden mt-4 text-center">
-            <p>Processing... Please wait.</p>
-            <div class="loader mx-auto mt-2"></div>
-        </div>
+      <div class="mb-6">
+        <h2 class="text-xl font-semibold mb-2">Step 4: Transcribe</h2>
+        <button
+          id="transcribeBtn"
+          class="w-full py-2 bg-purple-500 text-white rounded hover:bg-purple-600 transition-colors"
+        >
+          Transcribe
+        </button>
+      </div>
 
-        <div id="error" class="hidden mt-4 text-red-500"></div>
+      <div id="loading" class="hidden mt-4 text-center">
+        <p>Processing... Please wait.</p>
+        <div class="loader mx-auto mt-2"></div>
+      </div>
 
-        <div id="resultContainer" class="mt-4 hidden">
-            <div class="flex space-x-2 mb-2">
-                <button id="copyBtn" class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors">
-                    Copy
-                </button>
-                <button id="summarizeBtn" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors">
-                    Summarize
-                </button>
-            </div>
-            <div id="result" class="text-gray-700 border p-4 rounded max-h-60 overflow-y-auto"></div>
+      <div id="error" class="hidden mt-4 text-red-500"></div>
+
+      <div id="resultContainer" class="mt-4 hidden">
+        <div class="flex space-x-2 mb-2">
+          <button
+            id="copyBtn"
+            class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600 transition-colors"
+          >
+            Copy
+          </button>
+          <button
+            id="summarizeBtn"
+            class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-colors"
+          >
+            Summarize
+          </button>
         </div>
-        
-        <div id="summaryResult" class="mt-4 text-gray-700 hidden">
-            <h3 class="text-lg font-semibold">Summary:</h3>
-            <p id="summaryText"></p>
-        </div>
+        <div
+          id="result"
+          class="text-gray-700 border p-4 rounded max-h-60 overflow-y-auto"
+        ></div>
+      </div>
+
+      <div id="summaryResult" class="mt-4 text-gray-700 hidden">
+        <h3 class="text-lg font-semibold">Summary:</h3>
+        <p id="summaryText"></p>
+      </div>
     </div>
 
     <script>
-        const dropZone = document.getElementById('dropZone');
-        const fileInput = document.getElementById('fileInput');
-        const openaiBtn = document.getElementById('openaiBtn');
-        const assemblyaiBtn = document.getElementById('assemblyaiBtn');
-        const apiKeySection = document.getElementById('apiKeySection');
-        const openaiKeyInput = document.getElementById('openaiKeyInput');
-        const assemblyaiKeyInput = document.getElementById('assemblyaiKeyInput');
-        const transcribeBtn = document.getElementById('transcribeBtn');
-        const loading = document.getElementById('loading');
-        const error = document.getElementById('error');
-        const resultContainer = document.getElementById('resultContainer');
-        const result = document.getElementById('result');
-        const copyBtn = document.getElementById('copyBtn');
-        const summarizeBtn = document.getElementById('summarizeBtn');
-        const summaryResult = document.getElementById('summaryResult');
-        const summaryText = document.getElementById('summaryText');
+      const dropZone = document.getElementById("dropZone");
+      const fileInput = document.getElementById("fileInput");
+      const openaiBtn = document.getElementById("openaiBtn");
+      const assemblyaiBtn = document.getElementById("assemblyaiBtn");
+      const apiKeySection = document.getElementById("apiKeySection");
+      const openaiKeyInput = document.getElementById("openaiKeyInput");
+      const assemblyaiKeyInput = document.getElementById("assemblyaiKeyInput");
+      const transcribeBtn = document.getElementById("transcribeBtn");
+      const loading = document.getElementById("loading");
+      const error = document.getElementById("error");
+      const resultContainer = document.getElementById("resultContainer");
+      const result = document.getElementById("result");
+      const copyBtn = document.getElementById("copyBtn");
+      const summarizeBtn = document.getElementById("summarizeBtn");
+      const summaryResult = document.getElementById("summaryResult");
+      const summaryText = document.getElementById("summaryText");
 
-        let selectedService = '';
+      let selectedService = "";
 
-        // Precautions and API info toggles
-        document.getElementById('showPrecautions').addEventListener('click', () => {
-            document.getElementById('precautionsContent').classList.toggle('hidden');
+      // Precautions and API info toggles
+      document
+        .getElementById("showPrecautions")
+        .addEventListener("click", () => {
+          document
+            .getElementById("precautionsContent")
+            .classList.toggle("hidden");
         });
 
-        document.getElementById('showApiInfo').addEventListener('click', () => {
-            document.getElementById('apiInfoContent').classList.toggle('hidden');
-        });
+      document.getElementById("showApiInfo").addEventListener("click", () => {
+        document.getElementById("apiInfoContent").classList.toggle("hidden");
+      });
 
-        dropZone.addEventListener('click', () => fileInput.click());
-        dropZone.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            dropZone.classList.add('border-blue-500');
-        });
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.classList.remove('border-blue-500');
-        });
-        dropZone.addEventListener('drop', (e) => {
-            e.preventDefault();
-            dropZone.classList.remove('border-blue-500');
-            fileInput.files = e.dataTransfer.files;
-            updateDropZoneText();
-        });
-        fileInput.addEventListener('change', updateDropZoneText);
+      dropZone.addEventListener("click", () => fileInput.click());
+      dropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropZone.classList.add("border-blue-500");
+      });
+      dropZone.addEventListener("dragleave", () => {
+        dropZone.classList.remove("border-blue-500");
+      });
+      dropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropZone.classList.remove("border-blue-500");
+        fileInput.files = e.dataTransfer.files;
+        updateDropZoneText();
+      });
+      fileInput.addEventListener("change", updateDropZoneText);
 
-        function updateDropZoneText() {
-            dropZone.textContent = fileInput.files.length > 0 
-                ? `File selected: ${fileInput.files[0].name}` 
-                : 'Drop your audio file here or click to select';
+      function updateDropZoneText() {
+        dropZone.textContent =
+          fileInput.files.length > 0
+            ? `File selected: ${fileInput.files[0].name}`
+            : "Drop your audio file here or click to select";
+      }
+
+      openaiBtn.addEventListener("click", () => selectService("openai"));
+      assemblyaiBtn.addEventListener("click", () =>
+        selectService("assemblyai")
+      );
+
+      function selectService(service) {
+        selectedService = service;
+        apiKeySection.classList.remove("hidden");
+        openaiKeyInput.classList.toggle("hidden", service !== "openai");
+        assemblyaiKeyInput.classList.toggle("hidden", service !== "assemblyai");
+        openaiBtn.classList.toggle("bg-blue-700", service === "openai");
+        assemblyaiBtn.classList.toggle(
+          "bg-green-700",
+          service === "assemblyai"
+        );
+      }
+
+      transcribeBtn.addEventListener("click", () => {
+        if (!fileInput.files.length) {
+          showError("Please select an audio file.");
+          return;
+        }
+        if (!selectedService) {
+          showError("Please select a transcription service.");
+          return;
+        }
+        const apiKey =
+          selectedService === "openai"
+            ? document.getElementById("openaiKey").value
+            : document.getElementById("assemblyaiKey").value;
+        if (!apiKey) {
+          showError("Please enter your API key.");
+          return;
         }
 
-        openaiBtn.addEventListener('click', () => selectService('openai'));
-        assemblyaiBtn.addEventListener('click', () => selectService('assemblyai'));
+        const formData = new FormData();
+        formData.append("file", fileInput.files[0]);
+        formData.append("service", selectedService);
+        formData.append("api_key", apiKey);
 
-        function selectService(service) {
-            selectedService = service;
-            apiKeySection.classList.remove('hidden');
-            openaiKeyInput.classList.toggle('hidden', service !== 'openai');
-            assemblyaiKeyInput.classList.toggle('hidden', service !== 'assemblyai');
-            openaiBtn.classList.toggle('bg-blue-700', service === 'openai');
-            assemblyaiBtn.classList.toggle('bg-green-700', service === 'assemblyai');
+        loading.classList.remove("hidden");
+        error.classList.add("hidden");
+        resultContainer.classList.add("hidden");
+        result.innerHTML = "";
+        summaryResult.classList.add("hidden");
+
+        fetch("/api/transcribe", {
+          method: "POST",
+          body: formData,
+        })
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((err) => {
+                throw new Error(err.error || "Unknown error occurred");
+              });
+            }
+            return response.json();
+          })
+          .then((data) => {
+            result.innerHTML = `<p>${data.transcription}</p>`;
+            resultContainer.classList.remove("hidden");
+          })
+          .catch((err) => {
+            showError(`Transcription error: ${err.message}`);
+          })
+          .finally(() => {
+            loading.classList.add("hidden");
+          });
+      });
+
+      copyBtn.addEventListener("click", () => {
+        const transcription = result.querySelector("p").textContent;
+        navigator.clipboard.writeText(transcription).then(() => {
+          alert("Transcription copied to clipboard!");
+        });
+      });
+
+      summarizeBtn.addEventListener("click", () => {
+        const transcription = result.querySelector("p").textContent;
+        let apiKey = document.getElementById("openaiKey").value;
+
+        if (!apiKey && selectedService === "assemblyai") {
+          apiKey = prompt(
+            "Please enter your OpenAI API key for summarization:"
+          );
+          if (!apiKey) {
+            showError("OpenAI API key is required for summarization.");
+            return;
+          }
         }
 
-        transcribeBtn.addEventListener('click', () => {
-            if (!fileInput.files.length) {
-                showError('Please select an audio file.');
-                return;
-            }
-            if (!selectedService) {
-                showError('Please select a transcription service.');
-                return;
-            }
-            const apiKey = selectedService === 'openai' 
-                ? document.getElementById('openaiKey').value 
-                : document.getElementById('assemblyaiKey').value;
-            if (!apiKey) {
-                showError('Please enter your API key.');
-                return;
-            }
-
-            const formData = new FormData();
-            formData.append('file', fileInput.files[0]);
-            formData.append('service', selectedService);
-            formData.append('api_key', apiKey);
-
-            loading.classList.remove('hidden');
-            error.classList.add('hidden');
-            resultContainer.classList.add('hidden');
-            result.innerHTML = '';
-            summaryResult.classList.add('hidden');
-
-            fetch('/transcribe', {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.error) {
-                    throw new Error(data.error);
-                }
-                result.innerHTML = `<p>${data.transcription}</p>`;
-                resultContainer.classList.remove('hidden');
-            })
-            .catch(err => {
-                showError(`Transcription error: ${err.message}`);
-            })
-            .finally(() => {
-                loading.classList.add('hidden');
-            });
-        });
-
-        copyBtn.addEventListener('click', () => {
-            const transcription = result.querySelector('p').textContent;
-            navigator.clipboard.writeText(transcription).then(() => {
-                alert('Transcription copied to clipboard!');
-            });
-        });
-
-    summarizeBtn.addEventListener('click', () => {
-        const transcription = result.querySelector('p').textContent;
-        let apiKey = document.getElementById('openaiKey').value;
-
-        if (!apiKey && selectedService === 'assemblyai') {
-            apiKey = prompt("Please enter your OpenAI API key for summarization:");
-            if (!apiKey) {
-                showError('OpenAI API key is required for summarization.');
-                return;
-            }
-        }
-
-        loading.classList.remove('hidden');
-        error.classList.add('hidden');
+        loading.classList.remove("hidden");
+        error.classList.add("hidden");
         summarizeBtn.disabled = true;
 
-        fetch('/summarize', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                text: transcription,
-                api_key: apiKey
-            })
+        fetch("/api/summarize", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            text: transcription,
+            api_key: apiKey,
+          }),
         })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                throw new Error(data.error);
+          .then((response) => {
+            if (!response.ok) {
+              return response.json().then((err) => {
+                throw new Error(err.error || "Unknown error occurred");
+              });
             }
+            return response.json();
+          })
+          .then((data) => {
             summaryText.innerHTML = data.summary;
-            summaryResult.classList.remove('hidden');
-            // Scroll to the summary
-            summaryResult.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        })
-        .catch(err => {
+            summaryResult.classList.remove("hidden");
+            summaryResult.scrollIntoView({
+              behavior: "smooth",
+              block: "start",
+            });
+          })
+          .catch((err) => {
             showError(`Summarization error: ${err.message}`);
-        })
-        .finally(() => {
-            loading.classList.add('hidden');
+          })
+          .finally(() => {
+            loading.classList.add("hidden");
             summarizeBtn.disabled = false;
-        });
-    });
+          });
+      });
 
-        function showError(message) {
-            error.textContent = message;
-            error.classList.remove('hidden');
-        }
+      function showError(message) {
+        error.textContent = message;
+        error.classList.remove("hidden");
+      }
     </script>
-</body>
+  </body>
 </html>
