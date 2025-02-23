@@ -1,0 +1,60 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+ENV/
+.env
+
+# Audio files
+*.mp3
+*.wav
+*.ogg
+*.m4a
+*.flac
+*.mp4
+*.mpeg
+*.mpga
+*.oga
+*.webm
+
+# Temporary files
+/tmp/
+*.tmp
+
+# Transcripts and output files
+transcript_*.txt
+timeline_*.txt
+
+# Logs
+*.log
+logs/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# System Files
+.DS_Store
+Thumbs.db
