@@ -17,6 +17,9 @@ import sys
 import requests
 from openai import OpenAI
 
+# Load environment variables from .env file
+load_dotenv()
+
 # Initialize Flask app
 app = Flask(__name__, static_folder='../public', static_url_path='')
 CORS(app)
@@ -24,9 +27,6 @@ CORS(app)
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-# Load environment variables
-load_dotenv()
 
 # Memory management settings
 MAX_MEMORY = 512 * 1024 * 1024  # 512MB

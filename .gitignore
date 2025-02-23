@@ -1,6 +1,6 @@
 .DS_Store
 *.mp3
-venv/
+.venv/
 __pycache__/
 *.pyc
 .env
@@ -8,4 +8,4 @@ Transcripts/
 Old/
 Transcripts/
 Old/
-.vercel
+.vercel/

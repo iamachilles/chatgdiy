@@ -6,3 +6,4 @@ assemblyai==0.17.0
 python-dotenv==1.0.0
 pydub==0.25.1
 psutil==5.9.8
+requests==2.26.0
