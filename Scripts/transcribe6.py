@@ -418,6 +418,4 @@ def health_check():
     return jsonify(status)
 
 if __name__ == '__main__':
-    # Set memory limits before running
-    limit_memory()
     app.run(debug=False)
